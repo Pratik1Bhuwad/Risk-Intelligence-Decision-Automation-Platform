@@ -1,0 +1,17 @@
+{
+  "dataset_name": "paysim",
+  "dataset_filename": "PaySimData.csv",
+  "dataset_path": "C:\\Pratik_Bhuwad\\Risk Intelligence & Decision Automation Platform\\data\\raw\\paysim\\PaySimData.csv",
+  "sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+  "file_size_bytes": 493534783,
+  "audit_version": "0.1.0",
+  "git_commit_hash": "UNKNOWN (Not a git repository)",
+  "python_version": "3.12.10",
+  "pandas_version": "2.3.3",
+  "execution_timestamp": "2026-09-19T12:55:08.509657",
+  "audit_mode": "FULL",
+  "row_count": 6362620,
+  "column_count": 11,
+  "elapsed_seconds": 90.42,
+  "read_only_verified": true
+}

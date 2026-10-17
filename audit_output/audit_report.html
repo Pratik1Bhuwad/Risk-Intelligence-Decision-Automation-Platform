@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PaySim Data Audit Report - Risk Intelligence & Decision Automation Platform</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --status-confirmed: #0284c7;
+            --status-observed: #475569;
+            --status-hypothesis: #9333ea;
+            --status-unknown: #ca8a04;
+            --status-investigate: #ea580c;
+            --status-critical: #dc2626;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem 1.5rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 1.5rem; }
+        h1 { font-size: 1.875rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.35rem; font-weight: 600; color: #334155; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; font-weight: 600; color: #475569; margin-top: 1rem; margin-bottom: 0.5rem; }
+        p { margin-bottom: 0.75rem; color: #334155; }
+        .meta-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .meta-item { background: #f1f5f9; padding: 0.35rem 0.75rem; border-radius: 4px; border: 1px solid #cbd5e1; }
+        .meta-item strong { color: #1e293b; }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .grid-kpi {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .kpi-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .kpi-val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .kpi-lbl { font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); margin-top: 0.25rem; letter-spacing: 0.5px; }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-CONFIRMED { background: #e0f2fe; color: var(--status-confirmed); border: 1px solid #bae6fd; }
+        .badge-OBSERVED { background: #f1f5f9; color: var(--status-observed); border: 1px solid #cbd5e1; }
+        .badge-HYPOTHESIS { background: #f3e8ff; color: var(--status-hypothesis); border: 1px solid #e9d5ff; }
+        .badge-UNKNOWN { background: #fef9c3; color: var(--status-unknown); border: 1px solid #fef08a; }
+        .badge-INVESTIGATE { background: #ffedd5; color: var(--status-investigate); border: 1px solid #fed7aa; }
+        .badge-CRITICAL { background: #fee2e2; color: var(--status-critical); border: 1px solid #fca5a5; }
+        .badge-FEASIBLE { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .badge-SEVERELY_CONSTRAINED { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        th, td {
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { background: #f8fafc; font-weight: 600; color: #475569; }
+        tr:hover { background-color: #f1f5f9; }
+
+        .alert-box {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+            font-size: 0.9rem;
+        }
+        .alert-info { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
+        .alert-warning { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+        .alert-danger { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>PaySim Data Audit Report</h1>
+        <p><strong>Platform:</strong> Risk Intelligence & Decision Automation Platform</p>
+        <div class="meta-bar">
+            <div class="meta-item"><strong>Audit Version:</strong> 0.1.0</div>
+            <div class="meta-item"><strong>Mode:</strong> <span class="badge badge-CONFIRMED">FULL</span></div>
+            <div class="meta-item"><strong>Timestamp:</strong> 2026-09-19T12:55:08.509657</div>
+            <div class="meta-item"><strong>Rows:</strong> 6,362,620</div>
+            <div class="meta-item"><strong>Columns:</strong> 11</div>
+            <div class="meta-item"><strong>SHA-256:</strong> <code>16910f90577b0d98...</code></div>
+        </div>
+    </header>
+
+    <!-- Executive Summary -->
+    <div class="card">
+        <h2>1. Executive Summary & Findings</h2>
+        <div class="grid-kpi">
+            <div class="kpi-box">
+                <div class="kpi-val">6,362,620</div>
+                <div class="kpi-lbl">Total Records</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-val">8,213</div>
+                <div class="kpi-lbl">Fraud Transactions</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-val">0.12908%</div>
+                <div class="kpi-lbl">Fraud Prevalence</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-val">99.8537%</div>
+                <div class="kpi-lbl">Single-Tx Originators</div>
+            </div>
+        </div>
+
+        <div class="alert-box alert-warning">
+            <strong>Critical Architectural Finding:</strong> 
+            99.8537% of originating accounts (<code>nameOrig</code>) appear exactly once. 
+            <strong>Customer Risk Scoring</strong> and <strong>Behavioral Change Detection</strong> for originating accounts cannot rely on historical transaction profile within PaySim.
+        </div>
+        <div class="alert-box alert-info">
+            <strong>Synthetic Constraint Confirmed:</strong> 
+            Fraud transactions occur <em>strictly</em> in <code>TRANSFER</code> and <code>CASH_OUT</code> transactions. All other transaction types (<code>PAYMENT</code>, <code>CASH_IN</code>, <code>DEBIT</code>) have exactly 0 observed fraud records.
+        </div>
+    </div>
+
+    <!-- File Verification & Read-Only Integrity -->
+    <div class="card">
+        <h2>2. File Verification & Data Integrity</h2>
+        <table>
+            <thead>
+                <tr><th>Attribute</th><th>Observed Value</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Dataset File Path</td><td><code>C:\Pratik_Bhuwad\Risk Intelligence & Decision Automation Platform\data\raw\paysim\PaySimData.csv</code></td><td><span class="badge badge-CONFIRMED">CONFIRMED</span></td></tr>
+                <tr><td>File Size</td><td>493,534,783 bytes (~470.7 MB)</td><td><span class="badge badge-CONFIRMED">CONFIRMED</span></td></tr>
+                <tr><td>Full SHA-256 Hash</td><td><code>16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b</code></td><td><span class="badge badge-CONFIRMED">CONFIRMED</span></td></tr>
+                <tr><td>Read Success</td><td>True</td><td><span class="badge badge-CONFIRMED">CONFIRMED</span></td></tr>
+                <tr><td>Malformed Rows Detected</td><td>0</td><td><span class="badge badge-CONFIRMED">CONFIRMED</span></td></tr>
+                <tr><td>Read-Only Integrity</td><td>File integrity verified: SHA-256 and size remain identical.</td><td><span class="badge badge-CONFIRMED">VERIFIED</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Schema & Missingness -->
+    <div class="card">
+        <h2>3. Schema & Data-Quality Summary</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Dtype</th>
+                    <th>Semantic Category</th>
+                    <th>Missing Count</th>
+                    <th>Zero Count</th>
+                    <th>Unique Count</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td><strong>step</strong></td>
+                    <td><code>int64</code></td>
+                    <td>TEMPORAL_STEP</td>
+                    <td>0 (0.0%)</td>
+                    <td>0</td>
+                    <td>743</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>type</strong></td>
+                    <td><code>object</code></td>
+                    <td>CATEGORICAL_TRANSACTION_TYPE</td>
+                    <td>0 (0.0%)</td>
+                    <td>0</td>
+                    <td>5</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>amount</strong></td>
+                    <td><code>float64</code></td>
+                    <td>NUMERICAL_AMOUNT</td>
+                    <td>0 (0.0%)</td>
+                    <td>16</td>
+                    <td>5,316,900</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>nameOrig</strong></td>
+                    <td><code>object</code></td>
+                    <td>ENTITY_ID_ORIGIN</td>
+                    <td>0 (0.0%)</td>
+                    <td>0</td>
+                    <td>6,353,307</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>oldbalanceOrg</strong></td>
+                    <td><code>float64</code></td>
+                    <td>NUMERICAL_BALANCE</td>
+                    <td>0 (0.0%)</td>
+                    <td>2102449</td>
+                    <td>1,845,844</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>newbalanceOrig</strong></td>
+                    <td><code>float64</code></td>
+                    <td>NUMERICAL_BALANCE</td>
+                    <td>0 (0.0%)</td>
+                    <td>3609566</td>
+                    <td>2,682,586</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>nameDest</strong></td>
+                    <td><code>object</code></td>
+                    <td>ENTITY_ID_DEST</td>
+                    <td>0 (0.0%)</td>
+                    <td>0</td>
+                    <td>2,722,362</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>oldbalanceDest</strong></td>
+                    <td><code>float64</code></td>
+                    <td>NUMERICAL_BALANCE</td>
+                    <td>0 (0.0%)</td>
+                    <td>2704388</td>
+                    <td>3,614,697</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>newbalanceDest</strong></td>
+                    <td><code>float64</code></td>
+                    <td>NUMERICAL_BALANCE</td>
+                    <td>0 (0.0%)</td>
+                    <td>2439433</td>
+                    <td>3,555,499</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>isFraud</strong></td>
+                    <td><code>int64</code></td>
+                    <td>TARGET_BINARY</td>
+                    <td>0 (0.0%)</td>
+                    <td>6354407</td>
+                    <td>2</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>isFlaggedFraud</strong></td>
+                    <td><code>int64</code></td>
+                    <td>FLAG_BINARY</td>
+                    <td>0 (0.0%)</td>
+                    <td>6362604</td>
+                    <td>2</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Target Analysis -->
+    <div class="card">
+        <h2>4. Target & Stratification Analysis</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Level</th>
+                    <th>Group</th>
+                    <th>Total Count</th>
+                    <th>Fraud Count</th>
+                    <th>Fraud Rate (%)</th>
+                    <th>Notes</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td>OVERALL</td>
+                    <td><strong>ALL_TRANSACTIONS</strong></td>
+                    <td>6,362,620</td>
+                    <td>8,213</td>
+                    <td>0.12908%</td>
+                    <td>Overall fraud prevalence: 0.12908%. Extremely imbalanced class distribution.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td>TRANSACTION_TYPE</td>
+                    <td><strong>CASH_IN</strong></td>
+                    <td>1,399,284</td>
+                    <td>0</td>
+                    <td>0.0%</td>
+                    <td>Zero fraud instances observed in this transaction type.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td>TRANSACTION_TYPE</td>
+                    <td><strong>CASH_OUT</strong></td>
+                    <td>2,237,500</td>
+                    <td>4,116</td>
+                    <td>0.18396%</td>
+                    <td>Fraud observed in this transaction type.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td>TRANSACTION_TYPE</td>
+                    <td><strong>DEBIT</strong></td>
+                    <td>41,432</td>
+                    <td>0</td>
+                    <td>0.0%</td>
+                    <td>Zero fraud instances observed in this transaction type.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td>TRANSACTION_TYPE</td>
+                    <td><strong>PAYMENT</strong></td>
+                    <td>2,151,495</td>
+                    <td>0</td>
+                    <td>0.0%</td>
+                    <td>Zero fraud instances observed in this transaction type.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td>TRANSACTION_TYPE</td>
+                    <td><strong>TRANSFER</strong></td>
+                    <td>532,909</td>
+                    <td>4,097</td>
+                    <td>0.7688%</td>
+                    <td>Fraud observed in this transaction type.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td>RULE_FLAG_COMPARISON</td>
+                    <td><strong>isFlaggedFraud == 1</strong></td>
+                    <td>16</td>
+                    <td>16</td>
+                    <td>100.0%</td>
+                    <td>Baseline rule isFlaggedFraud flagged 16 transactions (0.000251% of all data). Of flagged transactions, 16 were actual fraud and 0 were false alarms.</td>
+                    <td><span class="badge badge-OBSERVED">OBSERVED</span></td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Prediction-Time Availability & Leakage -->
+    <div class="card">
+        <h2>5. Prediction-Time Availability & Leakage Matrix</h2>
+        <p>Operational decision point status: <code>STATUS: UNKNOWN</code>. Evaluated against candidate pre-auth decision points.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Available at Tx Time?</th>
+                    <th>Generated After?</th>
+                    <th>Leakage Risk</th>
+                    <th>Rationale & Recommended Handling</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td><strong>step</strong></td>
+                    <td>YES</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-CONFIRMED">SAFE (TEMPORAL)</span></td>
+                    <td>Transaction timestamp is generated when the transaction arrives.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>type</strong></td>
+                    <td>YES</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-CONFIRMED">SAFE (CATEGORICAL)</span></td>
+                    <td>Defined at initiation by the user/system.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>amount</strong></td>
+                    <td>YES</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-CONFIRMED">SAFE (NUMERICAL)</span></td>
+                    <td>Transaction amount is specified at request time.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>nameOrig</strong></td>
+                    <td>YES</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-CONFIRMED">SAFE (ENTITY_ORIGIN)</span></td>
+                    <td>Originating account must exist and be authenticated before transacting.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>oldbalanceOrg</strong></td>
+                    <td>YES</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-CONFIRMED">SAFE / INVESTIGATE</span></td>
+                    <td>Origin balance before transaction is known internally by the account ledger.</td>
+                    <td><span class="badge badge-OBSERVED">OBSERVED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>newbalanceOrig</strong></td>
+                    <td>NO</td>
+                    <td>YES</td>
+                    <td><span class="badge badge-INVESTIGATE">POST_EVENT_LEAKAGE_RISK</span></td>
+                    <td>Computed and posted after transaction execution. If a transaction is blocked/declined at decision time, this balance is never realized. Requires investigation before feature use.</td>
+                    <td><span class="badge badge-INVESTIGATE">INVESTIGATE</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>nameDest</strong></td>
+                    <td>YES</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-CONFIRMED">SAFE (ENTITY_DEST)</span></td>
+                    <td>Provided by user or routing instructions at transaction arrival.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>oldbalanceDest</strong></td>
+                    <td>NO</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-INVESTIGATE">EXTERNAL_DATA_AVAILABILITY_RISK</span></td>
+                    <td>In closed-loop wallets, destination balance may be readable. In open banking/inter-bank rails, recipient balance is NOT available to the sender institution at transaction time. Status unknown until operational architecture confirmed.</td>
+                    <td><span class="badge badge-INVESTIGATE">INVESTIGATE</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>newbalanceDest</strong></td>
+                    <td>NO</td>
+                    <td>YES</td>
+                    <td><span class="badge badge-INVESTIGATE">POST_EVENT_LEAKAGE_RISK</span></td>
+                    <td>Updated post-settlement. In open-loop transfers, completely unavailable to sender. In closed-loop systems, generated strictly post-event.</td>
+                    <td><span class="badge badge-INVESTIGATE">INVESTIGATE</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>isFraud</strong></td>
+                    <td>NO</td>
+                    <td>YES</td>
+                    <td><span class="badge badge-CRITICAL">DIRECT_TARGET</span></td>
+                    <td>Ground truth outcome label. Established post-event via investigation or dispute. NEVER available at prediction time.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>isFlaggedFraud</strong></td>
+                    <td>NO</td>
+                    <td>NO</td>
+                    <td><span class="badge badge-INVESTIGATE">RULE_OUTPUT_LEAKAGE_RISK</span></td>
+                    <td>Represents an existing threshold rule (e.g. transfer > 200,000). Must be investigated to determine whether it reflects prior rule output rather than an independent predictive feature.</td>
+                    <td><span class="badge badge-INVESTIGATE">INVESTIGATE</span></td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Synthetic Artifact Review -->
+    <div class="card">
+        <h2>6. Synthetic-Data Artifact Review</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hypothesis ID</th>
+                    <th>Hypothesis Description</th>
+                    <th>Empirical Evidence</th>
+                    <th>Interpretation</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td><code>H1_FRAUD_TRANSACTION_TYPES</code></td>
+                    <td>Fraud occurs exclusively in TRANSFER and CASH_OUT transaction types.</td>
+                    <td>Observed fraud types: ['CASH_OUT', 'TRANSFER']. Fraud occurrences outside TRANSFER/CASH_OUT: 0.</td>
+                    <td>Fraud generation in PaySim simulation is strictly restricted to TRANSFER and CASH_OUT. Models can eliminate fraud predictions on PAYMENT, CASH_IN, and DEBIT.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><code>H2_FRAUD_BALANCE_DRAINING</code></td>
+                    <td>Fraud transactions drain the entire available balance (amount == oldbalanceOrg and newbalanceOrig == 0).</td>
+                    <td>8018 of 8213 fraud transactions (97.63%) have amount == oldbalanceOrg. 8053 (98.05%) result in zero newbalanceOrig.</td>
+                    <td>High concentration (97.63%) of fraud events transfer exactly the full balance, indicating a synthetic simulation rule where simulated fraudsters liquidate compromised accounts completely.</td>
+                    <td><span class="badge badge-OBSERVED">OBSERVED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><code>H3_MERCHANT_BALANCE_MECHANICS</code></td>
+                    <td>Merchant accounts (nameDest starting with 'M') always have zero balances (oldbalanceDest == 0 and newbalanceDest == 0).</td>
+                    <td>Of 2151495 merchant destination records, 2151495 (100.0%) have both balances exactly equal to 0.</td>
+                    <td>Merchant destination balances are not simulated in PaySim and remain fixed at 0. Balance features for merchants convey no information and reflect simulator omission.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><code>H4_ORIGIN_BALANCE_DISCREPANCY</code></td>
+                    <td>Originating account balance transition exhibits arithmetic discrepancies (old - amount != new).</td>
+                    <td>3678407 of 4963336 non-cash-in records (74.11%) violate exact balance accounting.</td>
+                    <td>Balance tracking in the simulator contains intentional or unintentional accounting errors, such as transactions allowed from zero-balance accounts or truncated calculations.</td>
+                    <td><span class="badge badge-OBSERVED">OBSERVED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><code>H5_ORIGIN_ACCOUNT_UNIQUENESS</code></td>
+                    <td>Originating accounts appear nearly or strictly once in the entire dataset, precluding customer history depth.</td>
+                    <td>6353307 unique originating accounts across 6362620 rows (99.8536% unique).</td>
+                    <td>In PaySim, originating accounts rarely repeat. This confirms that within-customer behavioral profiling is severely limited on the origin side without external customer identity linkage.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><code>H6_DESTINATION_ACCOUNT_REUSE</code></td>
+                    <td>Destination accounts receive repeat transactions, allowing destination-level profiling.</td>
+                    <td>2722362 unique destination accounts across 6362620 rows (reuse rate 57.2132%).</td>
+                    <td>Destination entities exhibit substantial repeat activity, enabling entity-level destination profiling, in-degree velocity metrics, and merchant risk categorization.</td>
+                    <td><span class="badge badge-CONFIRMED">CONFIRMED</span></td>
+                </tr>
+                
+                <tr>
+                    <td><code>H7_FLAGGED_FRAUD_RULE_LOGIC</code></td>
+                    <td>isFlaggedFraud represents a simple threshold rule: TRANSFER transactions > 200,000.</td>
+                    <td>Flagged count: 16. Types: ['TRANSFER']. Min amount: 353874.22. All > 200k: True. Unflagged transfers > 200k: 409094.</td>
+                    <td>All 16 flagged records are TRANSFERs > 200,000, but 409094 transfers > 200k were NOT flagged. The rule is either an incomplete/legacy threshold or depends on an undocumented condition.</td>
+                    <td><span class="badge badge-OBSERVED">OBSERVED</span></td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Capability Feasibility Assessment -->
+    <div class="card">
+        <h2>7. Capability Feasibility Matrix</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Capability</th>
+                    <th>Evidence Observed</th>
+                    <th>Status</th>
+                    <th>Limitation</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td><strong>Transaction Risk Score</strong></td>
+                    <td>Observed: complete transaction records with type, amount, oldbalanceOrg, nameDest prefixes, and 8,213+ fraud labels.</td>
+                    <td><span class="badge badge-FEASIBLE">FEASIBLE</span></td>
+                    <td>Post-event balance fields (newbalanceOrig, newbalanceDest) cannot be used directly in real-time scoring without causing data leakage. Model must rely strictly on pre-auth signals.</td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Customer Risk Score</strong></td>
+                    <td>Originating accounts (nameOrig) appear nearly 100% uniquely (single transaction per originator). In contrast, destination accounts (nameDest) show repeat activity.</td>
+                    <td><span class="badge badge-SEVERELY_CONSTRAINED">SEVERELY_CONSTRAINED</span></td>
+                    <td>Customer risk scoring cannot be built on originating accounts within PaySim due to absence of historical origin activity. Feasible only for destination entities (recipient/merchant risk profiling) or via external identity linkage.</td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Behavioral Change Indicators</strong></td>
+                    <td>Single-transaction origin accounts prevent customer-level baseline derivation across time.</td>
+                    <td><span class="badge badge-SEVERELY_CONSTRAINED">SEVERELY_CONSTRAINED</span></td>
+                    <td>Within-customer behavioral deviation is impossible on originating accounts. Macro-level or destination-level velocity (e.g. surge in incoming transfers to a single destination account) can still be computed.</td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Anomaly Indicators</strong></td>
+                    <td>Strong empirical signals observed: extreme amount distributions, zero-balance originator drain patterns, and distinct merchant vs customer patterns.</td>
+                    <td><span class="badge badge-FEASIBLE">FEASIBLE</span></td>
+                    <td>Anomalies must be computed relative to population cohorts or transaction types rather than individual customer baselines.</td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Explainable Risk Factors</strong></td>
+                    <td>High interpretability of observed signals: transaction type (TRANSFER/CASH_OUT), balance liquidation (amount == oldbalanceOrg), destination entity reuse, and high-value transfers.</td>
+                    <td><span class="badge badge-FEASIBLE">FEASIBLE</span></td>
+                    <td>Explanations must clearly reflect the limitations of the data (e.g. noting that originator has no prior transaction history in the system).</td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Decision Recommendations (Approve / Monitor / Manual Investigation)</strong></td>
+                    <td>Distinct risk separation between transaction types and balance-draining mechanisms allows multi-tier decision routing.</td>
+                    <td><span class="badge badge-FEASIBLE">FEASIBLE</span></td>
+                    <td>Low overall fraud prevalence (~0.13%) requires careful policy threshold tuning to prevent overwhelming fraud analysts with false positives during manual investigations.</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</body>
+</html>

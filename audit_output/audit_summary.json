@@ -1,0 +1,130 @@
+{
+  "run_metadata": {
+    "dataset_name": "paysim",
+    "dataset_filename": "PaySimData.csv",
+    "dataset_path": "C:\\Pratik_Bhuwad\\Risk Intelligence & Decision Automation Platform\\data\\raw\\paysim\\PaySimData.csv",
+    "sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+    "file_size_bytes": 493534783,
+    "audit_version": "0.1.0",
+    "git_commit_hash": "UNKNOWN (Not a git repository)",
+    "python_version": "3.12.10",
+    "pandas_version": "2.3.3",
+    "execution_timestamp": "2026-09-19T12:55:08.509657",
+    "audit_mode": "FULL",
+    "row_count": 6362620,
+    "column_count": 11,
+    "elapsed_seconds": 90.42,
+    "read_only_verified": true
+  },
+  "file_info": {
+    "file_path": "C:\\Pratik_Bhuwad\\Risk Intelligence & Decision Automation Platform\\data\\raw\\paysim\\PaySimData.csv",
+    "filename": "PaySimData.csv",
+    "extension": ".csv",
+    "exists": true,
+    "file_size_bytes": 493534783,
+    "sha256": "16910f90577b0d981bf8ff289714510bb89bc71bff7d3f220f024e287e4eea6b",
+    "mtime": 1789801457.4296963,
+    "row_count": 6362620,
+    "column_count": 11,
+    "read_success": true,
+    "malformed_rows": 0,
+    "error": null
+  },
+  "schema_summary": {
+    "columns": [
+      "step",
+      "type",
+      "amount",
+      "nameOrig",
+      "oldbalanceOrg",
+      "newbalanceOrig",
+      "nameDest",
+      "oldbalanceDest",
+      "newbalanceDest",
+      "isFraud",
+      "isFlaggedFraud"
+    ],
+    "total_columns": 11
+  },
+  "target_summary": [
+    {
+      "analysis_level": "OVERALL",
+      "group_name": "ALL_TRANSACTIONS",
+      "total_count": 6362620,
+      "fraud_count": 8213,
+      "non_fraud_count": 6354407,
+      "fraud_rate_pct": 0.12908,
+      "notes": "Overall fraud prevalence: 0.12908%. Extremely imbalanced class distribution.",
+      "status": "CONFIRMED"
+    },
+    {
+      "analysis_level": "TRANSACTION_TYPE",
+      "group_name": "CASH_IN",
+      "total_count": 1399284,
+      "fraud_count": 0,
+      "non_fraud_count": 1399284,
+      "fraud_rate_pct": 0.0,
+      "notes": "Zero fraud instances observed in this transaction type.",
+      "status": "CONFIRMED"
+    },
+    {
+      "analysis_level": "TRANSACTION_TYPE",
+      "group_name": "CASH_OUT",
+      "total_count": 2237500,
+      "fraud_count": 4116,
+      "non_fraud_count": 2233384,
+      "fraud_rate_pct": 0.18396,
+      "notes": "Fraud observed in this transaction type.",
+      "status": "CONFIRMED"
+    },
+    {
+      "analysis_level": "TRANSACTION_TYPE",
+      "group_name": "DEBIT",
+      "total_count": 41432,
+      "fraud_count": 0,
+      "non_fraud_count": 41432,
+      "fraud_rate_pct": 0.0,
+      "notes": "Zero fraud instances observed in this transaction type.",
+      "status": "CONFIRMED"
+    },
+    {
+      "analysis_level": "TRANSACTION_TYPE",
+      "group_name": "PAYMENT",
+      "total_count": 2151495,
+      "fraud_count": 0,
+      "non_fraud_count": 2151495,
+      "fraud_rate_pct": 0.0,
+      "notes": "Zero fraud instances observed in this transaction type.",
+      "status": "CONFIRMED"
+    },
+    {
+      "analysis_level": "TRANSACTION_TYPE",
+      "group_name": "TRANSFER",
+      "total_count": 532909,
+      "fraud_count": 4097,
+      "non_fraud_count": 528812,
+      "fraud_rate_pct": 0.7688,
+      "notes": "Fraud observed in this transaction type.",
+      "status": "CONFIRMED"
+    },
+    {
+      "analysis_level": "RULE_FLAG_COMPARISON",
+      "group_name": "isFlaggedFraud == 1",
+      "total_count": 16,
+      "fraud_count": 16,
+      "non_fraud_count": 0,
+      "fraud_rate_pct": 100.0,
+      "notes": "Baseline rule isFlaggedFraud flagged 16 transactions (0.000251% of all data). Of flagged transactions, 16 were actual fraud and 0 were false alarms.",
+      "status": "OBSERVED"
+    }
+  ],
+  "key_findings": [
+    "PaySim raw dataset integrity verified: SHA-256 hash identical before and after audit.",
+    "Total transactions: 6,362,620. Fraud transactions: 8213.",
+    "Fraud occurs strictly in TRANSFER and CASH_OUT transactions. 0 fraud in PAYMENT, CASH_IN, and DEBIT.",
+    "Originating accounts (nameOrig) appear nearly 100% uniquely, severely constraining within-customer behavioral profiling on origin side.",
+    "Destination accounts (nameDest) exhibit substantial reuse, enabling recipient and merchant profiling.",
+    "Post-event balance fields (newbalanceOrig, newbalanceDest) require investigation to prevent post-event leakage.",
+    "isFlaggedFraud represents a legacy heuristic rule (>200,000 TRANSFER); not a ground truth label."
+  ]
+}

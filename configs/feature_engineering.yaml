@@ -1,0 +1,29 @@
+# Feature Engineering Configuration
+dataset: paysim
+version: "0.1.0"
+
+raw_data_path: data/raw/paysim/PaySimData.csv
+output_dir: data/processed
+
+prediction_point:
+  event: "Transaction authorization request arrives at scoring/authorization boundary"
+  point: "Pre-Authorization Inline Evaluation"
+  temporal_index: "step"
+  same_step_policy: "EXCLUDE_SAME_STEP" # historical events strictly require step < current_step
+
+lookback_windows:
+  short_window_steps: 24  # 24 discrete steps (simulated 24-hour window)
+  long_window_steps: 168  # 168 discrete steps (simulated 7-day window)
+
+tolerance:
+  balance_drain_tolerance: 0.01
+
+feature_groups_enabled:
+  transaction_channel: true
+  temporal_cyclical: true
+  amount_behavior: true
+  balance_liquidation: true
+  counterparty_type: true
+  entity_velocity: true
+
+chunk_size: 200000
