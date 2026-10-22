@@ -1,0 +1,65 @@
+# ML Risk Modeling Configuration
+dataset: paysim
+version: "1.0.0"
+
+data:
+  features_parquet: "data/processed/paysim_features_full.parquet"
+  sample_parquet: "data/processed/paysim_features_100000.parquet"
+  raw_csv: "data/raw/paysim/PaySimData.csv"
+  artifacts_dir: "models/risk_model_v1"
+  reports_dir: "reports"
+
+target:
+  column: "isFraud"
+  positive_label: 1
+  negative_label: 0
+
+splitting:
+  strategy: "temporal_step"
+  temporal_index: "step"
+  train_max_step: 400   # Steps 1–400: ~5.79M rows (~91.0%), ~4,477 frauds (0.077%)
+  val_max_step: 550     # Steps 401–550: ~379k rows (~6.0%), ~1,588 frauds (0.419%)
+  test_max_step: 743    # Steps 551–743: ~197k rows (~3.1%), ~2,148 frauds (1.093%)
+
+random_seed: 42
+
+models:
+  baseline_dummy:
+    enabled: true
+    strategy: "prior"
+
+  baseline_logistic:
+    enabled: true
+    max_iter: 500
+    solver: "lbfgs"
+    class_weight: "balanced"
+    C: 1.0
+
+  champion_lightgbm:
+    enabled: true
+    n_estimators: 100
+    learning_rate: 0.05
+    max_depth: 6
+    num_leaves: 31
+    min_child_samples: 50
+    subsample: 0.8
+    colsample_bytree: 0.8
+    random_state: 42
+    scale_pos_weight: 1.0  # Tuned with PR-AUC threshold optimization
+
+  challenger_xgboost:
+    enabled: true
+    n_estimators: 100
+    learning_rate: 0.05
+    max_depth: 6
+    subsample: 0.8
+    colsample_bytree: 0.8
+    random_state: 42
+
+thresholds:
+  optimization_metric: "f1" # "f1", "recall", or "fpr"
+  operating_tiers:
+    # Default nominal tier boundaries (used for fallback or prior to optimization)
+    low_risk_threshold: 0.30     # Prob < 0.30 -> APPROVE (Low Risk)
+    medium_risk_threshold: 0.70  # 0.30 <= Prob < high_threshold -> MONITOR (Medium Risk)
+    high_risk_threshold: 0.70    # Baseline high tier; dynamically tuned to optimal validation threshold (0.9771) during pipeline fit

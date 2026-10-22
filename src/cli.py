@@ -16,9 +16,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task",
         type=str,
-        choices=["audit", "features"],
+        choices=["audit", "features", "train", "evaluate"],
         default="audit",
-        help="Task to execute: 'audit' (default) or 'features'.",
+        help="Task to execute: 'audit', 'features', 'train', or 'evaluate'.",
     )
     parser.add_argument(
         "--data",
@@ -67,7 +67,29 @@ def main() -> None:
     if args.mode == "features":
         task = "features"
 
-    if task == "features":
+    if task in ("train", "evaluate"):
+        from src.models.pipeline import MLRiskPipeline
+        config_path = args.config or "configs/modeling.yaml"
+        pipeline = MLRiskPipeline(config_path=config_path)
+
+        data_path = args.data
+        if not data_path:
+            data_path = (
+                pipeline.config.get("data", {}).get("sample_parquet", "data/processed/paysim_features_100000.parquet")
+                if args.mode == "sample"
+                else pipeline.config.get("data", {}).get("features_parquet", "data/processed/paysim_features_full.parquet")
+            )
+
+        try:
+            pipeline.run(
+                data_path=data_path,
+                artifacts_dir=args.output_dir or pipeline.artifacts_dir,
+            )
+        except Exception as exc:
+            print(f"\n[ERROR] Model training/evaluation failed: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+    elif task == "features":
         config_path = args.config or "configs/feature_engineering.yaml"
         data_path = args.data or "data/raw/paysim/PaySimData.csv"
         out_dir = args.output_dir or "data/processed"
@@ -107,6 +129,7 @@ def main() -> None:
         except Exception as exc:
             print(f"\n[ERROR] Audit execution failed: {exc}", file=sys.stderr)
             sys.exit(1)
+
 
 
 if __name__ == "__main__":

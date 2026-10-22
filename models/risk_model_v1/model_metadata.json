@@ -1,0 +1,162 @@
+{
+  "model_version": "1.0.0",
+  "dataset_version": "paysim_v0.1.0",
+  "champion_model": "lightgbm",
+  "created_at": "2026-10-17T17:04:29.852332",
+  "random_seed": 42,
+  "feature_names": [
+    "is_transfer",
+    "is_cash_out",
+    "is_payment",
+    "is_cash_in",
+    "is_debit",
+    "is_high_risk_type",
+    "hour_of_day",
+    "day_of_simulation",
+    "day_of_week",
+    "is_night_hour",
+    "amount",
+    "log_amount",
+    "is_amount_zero",
+    "is_amount_round_100",
+    "is_amount_round_1000",
+    "oldbalanceOrg",
+    "log_oldbalanceOrg",
+    "is_orig_zero_balance",
+    "amount_to_orig_balance_ratio",
+    "orig_balance_to_amount_ratio",
+    "is_amount_exceeds_orig_balance",
+    "is_full_balance_drain",
+    "is_zero_balance_transfer",
+    "dest_is_merchant",
+    "dest_is_customer",
+    "dest_prior_tx_count",
+    "dest_prior_total_amount",
+    "dest_prior_avg_amount",
+    "dest_time_since_last_tx",
+    "dest_is_first_time_seen",
+    "dest_tx_count_prior_24h",
+    "dest_amount_sum_prior_24h",
+    "orig_prior_tx_count",
+    "orig_prior_total_amount",
+    "orig_time_since_last_tx",
+    "orig_is_first_time_seen"
+  ],
+  "feature_count": 36,
+  "temporal_split": {
+    "train": {
+      "name": "train",
+      "min_step": 1,
+      "max_step": 400,
+      "total_count": 5787030,
+      "fraud_count": 4477,
+      "fraud_rate_pct": 0.07736
+    },
+    "val": {
+      "name": "val",
+      "min_step": 401,
+      "max_step": 550,
+      "total_count": 378989,
+      "fraud_count": 1588,
+      "fraud_rate_pct": 0.41901
+    },
+    "test": {
+      "name": "test",
+      "min_step": 551,
+      "max_step": 743,
+      "total_count": 196601,
+      "fraud_count": 2148,
+      "fraud_rate_pct": 1.09257
+    }
+  },
+  "threshold_policy": {
+    "selected_operating_threshold": 0.9771,
+    "low_risk_threshold": 0.3,
+    "high_risk_threshold": 0.9771,
+    "max_f1_candidate": {
+      "threshold": 0.9771,
+      "f1_score": 0.99969,
+      "precision": 1.0,
+      "recall": 0.99937
+    },
+    "recall_constrained_candidate": {
+      "min_recall_target": 0.95,
+      "threshold": 0.9816,
+      "actual_recall": 0.99811,
+      "precision": 1.0
+    },
+    "fpr_constrained_candidate": {
+      "max_fpr_target": 0.001,
+      "threshold": 0.0001,
+      "actual_fpr": 0.000996,
+      "recall": 0.99937
+    }
+  },
+  "calibration_diagnostics": {
+    "method": "sigmoid",
+    "raw_brier_score": 3e-06,
+    "calibrated_brier_score": 3e-06,
+    "brier_improvement": 0.0,
+    "calibration_curve": {
+      "prob_true": [
+        0.0,
+        1.0
+      ],
+      "prob_pred": [
+        0.0,
+        1.0
+      ]
+    }
+  },
+  "champion_test_metrics": {
+    "threshold": 0.9771,
+    "total_samples": 196601,
+    "positive_prevalence_pct": 1.09257,
+    "roc_auc": 0.9994,
+    "pr_auc": 0.99908,
+    "precision": 1.0,
+    "recall": 0.99907,
+    "f1_score": 0.99953,
+    "fpr": 0.0,
+    "specificity": 1.0,
+    "brier_score": 1.4e-05,
+    "log_loss": 0.0,
+    "confusion_matrix": {
+      "true_negatives": 194453,
+      "false_positives": 0,
+      "false_negatives": 2,
+      "true_positives": 2146
+    }
+  },
+  "error_analysis_summary": {
+    "false_positives": 0,
+    "false_negatives": 2,
+    "channel_error_breakdown": {
+      "is_transfer": {
+        "total": 18746,
+        "false_negatives": 2,
+        "false_positives": 0
+      },
+      "is_cash_out": {
+        "total": 63475,
+        "false_negatives": 0,
+        "false_positives": 0
+      },
+      "is_payment": {
+        "total": 67724,
+        "false_negatives": 0,
+        "false_positives": 0
+      },
+      "is_cash_in": {
+        "total": 45107,
+        "false_negatives": 0,
+        "false_positives": 0
+      },
+      "is_debit": {
+        "total": 1549,
+        "false_negatives": 0,
+        "false_positives": 0
+      }
+    }
+  }
+}

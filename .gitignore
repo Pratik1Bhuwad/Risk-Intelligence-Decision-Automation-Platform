@@ -6,6 +6,7 @@ data/processed/*
 !data/processed/.gitkeep
 *.csv
 *.parquet
+*.joblib
 *.zip
 *.tar.gz
 *.tar
