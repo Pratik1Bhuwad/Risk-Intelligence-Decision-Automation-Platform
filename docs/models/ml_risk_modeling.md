@@ -56,10 +56,20 @@ $$\text{Train}(t \le 400) \quad \longrightarrow \quad \text{Validation}(400 < t 
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Train** | Steps 1–400 | 5,787,030 | 90.95% | 4,477 | 0.07736% | Fitting model weights and preprocessors |
 | **Validation** | Steps 401–550 | 378,989 | 5.96% | 1,588 | 0.41901% | Model selection, calibration, threshold tuning |
-| **Test** | Steps 551–743 | 196,601 | 3.09% | 2,148 | 1.09257% | Final untouched out-of-time evaluation |
+| **Test** | Steps 551–743 | 196,601 | 3.09% | 2,148 | 1.09257% | Final temporal test partition (qualified holdout — see disclosure note below) |
 | **Total** | Steps 1–743 | 6,362,620 | 100.0% | 8,213 | 0.12908% | Entire PaySim Dataset |
 
 *Note: All three splits contain thousands of fraud cases and reflect real temporal shifts in transaction volume.*
+
+> [!NOTE]
+> **Test-Partition Holdout Qualification & Inspection Disclosure**:
+> Final temporal test partition (steps 551–743). Two false-negative cases at row indices `6281484` and `6362462` were previously inspected during Phase 04 error analysis (see Section 7). Consequently:
+> - Test-partition rows `6281484` and `6362462` were inspected during Phase 04 false-negative error analysis.
+> - The test partition therefore cannot be represented as completely untouched or pristine.
+> - This disclosure is required for transparent interpretation of subsequent Phase 05 evaluation results.
+> - No bespoke Phase 05 tuning, feature selection, or acceptance-gate selection may use these inspected cases.
+> - This disclosure does not imply that Phase 05 anomaly detection has already evaluated these rows.
+> - If a pristine, untouched holdout evaluation is required, a new holdout partition that has not influenced model or specification decisions must be reserved.
 
 ---
 
@@ -142,7 +152,7 @@ Threshold selection was performed strictly on the validation set (`y_val`, `cal_
 
 ## 7. Out-of-Time Test Set Evaluation & Error Analysis
 
-The optimal threshold (`0.9771`) was applied to the untouched **Test Set (Steps 551–743, 196,601 transactions)**:
+The optimal threshold (`0.9771`) was applied to the **Test Set (Steps 551–743, 196,601 transactions)** (qualified holdout subject to the Section 3 inspection disclosure):
 
 ### Test Confusion Matrix:
 ```
@@ -156,15 +166,15 @@ Actual Fraud (1)                     2                 2,146
 - **True Positives**: 2,146
 
 ### Error Analysis on False Negatives:
-We conducted a deep inspection into the **2 missed fraud transactions**:
-1. **Missed Fraud Case #1**:
+We conducted a deep inspection into the **2 missed fraud transactions** (row indices `6281484` and `6362462` in the source dataset):
+1. **Missed Fraud Case #1 (Row Index: 6281484)**:
    - `amount`: 399,045.08
    - `oldbalanceOrg`: 10,399,045.08
    - `is_transfer`: 1
    - `is_full_balance_drain`: 0
    - `dest_prior_tx_count`: 0
    - `predicted_prob`: 0.0001
-2. **Missed Fraud Case #2**:
+2. **Missed Fraud Case #2 (Row Index: 6362462)**:
    - `amount`: 7,316,255.05
    - `oldbalanceOrg`: 17,316,255.05
    - `is_transfer`: 1
