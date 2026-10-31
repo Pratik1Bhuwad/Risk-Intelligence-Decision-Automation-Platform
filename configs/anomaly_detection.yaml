@@ -1,0 +1,242 @@
+# ==============================================================================
+# Phase 05 — Anomaly Detection & Behavioral Outlier Profiling Configuration
+# Baseline Specification: v2.3.2 (Approved 2026-10-31)
+# Status: FROZEN BASELINE (Pre-Implementation Verification)
+# ==============================================================================
+
+# 1. Specification Version
+specification:
+  name: "Phase 05 — Anomaly Detection & Behavioral Outlier Profiling"
+  version: "2.3.2"
+  approval_date: "2026-10-31"
+  status: "FROZEN_BASELINE"
+
+# 2. Detector and Algorithm Version
+detector:
+  name: "IsolationForest_Outlier_Detector"
+  algorithm: "IsolationForest"
+  version: "1.0.0"
+  framework: "scikit-learn"
+  framework_version: "1.7.2"
+  hyperparameters:
+    n_estimators: 100
+    max_samples: "auto"
+    contamination: "auto"
+    max_features: 1.0
+    bootstrap: false
+    random_state: 42
+    n_jobs: 1
+    verbose: 0
+
+# 3. Eligible Population & Channels
+eligibility:
+  channels:
+    - "TRANSFER"
+    - "CASH_OUT"
+  prohibited_channels:
+    - "PAYMENT"
+    - "CASH_IN"
+    - "DEBIT"
+  target_population_description: "Eligible TRANSFER and CASH_OUT authorization requests at Gate 3"
+
+# 4. Feature List and Feature Order (Canonical 36-Feature Phase 03 Catalog)
+features:
+  feature_catalog_version: "1.0.0"
+  feature_count: 36
+  feature_names:
+    - "is_transfer"
+    - "is_cash_out"
+    - "is_payment"
+    - "is_cash_in"
+    - "is_debit"
+    - "is_high_risk_type"
+    - "hour_of_day"
+    - "day_of_simulation"
+    - "day_of_week"
+    - "is_night_hour"
+    - "amount"
+    - "log_amount"
+    - "is_amount_zero"
+    - "is_amount_round_100"
+    - "is_amount_round_1000"
+    - "oldbalanceOrg"
+    - "log_oldbalanceOrg"
+    - "is_orig_zero_balance"
+    - "amount_to_orig_balance_ratio"
+    - "orig_balance_to_amount_ratio"
+    - "is_amount_exceeds_orig_balance"
+    - "is_full_balance_drain"
+    - "is_zero_balance_transfer"
+    - "dest_is_merchant"
+    - "dest_is_customer"
+    - "dest_prior_tx_count"
+    - "dest_prior_total_amount"
+    - "dest_prior_avg_amount"
+    - "dest_time_since_last_tx"
+    - "dest_is_first_time_seen"
+    - "dest_tx_count_prior_24h"
+    - "dest_amount_sum_prior_24h"
+    - "orig_prior_tx_count"
+    - "orig_prior_total_amount"
+    - "orig_time_since_last_tx"
+    - "orig_is_first_time_seen"
+
+# 5. Historical Reference-Window Rules
+historical_reference_windows:
+  temporal_index: "step"
+  temporal_policy: "historical_step < current_step"
+  same_step_policy: "EXCLUDE_SAME_STEP"
+  lookback_windows:
+    short_window_steps: 24   # 24 discrete steps (24 simulated hours)
+    long_window_steps: 168   # 168 discrete steps (7 simulated days)
+  prediction_point: "Pre-Authorization Inline Evaluation (Gate 3)"
+
+# 6. Channel-Conditioning Rules
+channel_conditioning:
+  enabled: true
+  strategy: "channel_conditioned"
+  description: "Baseline reference distributions are conditioned on transaction channel (TRANSFER vs. CASH_OUT)"
+  conditioned_channels:
+    - "TRANSFER"
+    - "CASH_OUT"
+
+# 7. Preprocessing Definitions
+preprocessing:
+  scaling_method: "robust_scaling"
+  centering_statistic: "median"
+  scaling_statistic: "mad_or_fallback"
+  prohibited_values:
+    - "NaN"
+    - "Infinity"
+    - "-Infinity"
+  input_validation:
+    enforce_zero_leakage: true
+    strictly_excluded_fields:
+      - "newbalanceOrig"
+      - "newbalanceDest"
+      - "oldbalanceDest"
+      - "isFraud"
+      - "isFlaggedFraud"
+    require_immutable_row_index: true
+
+# 8. Fallback Hierarchy (Self-Contained Four-Tier Hierarchy)
+fallback_hierarchy:
+  stage_1_primary:
+    method: "MAD"
+    description: "Median Absolute Deviation"
+    formula: "median(abs(x - median(x)))"
+    scale_factor: 1.4826
+    condition: "finite and strictly positive (scale > 0.0)"
+  stage_2_first_fallback:
+    method: "IQR"
+    description: "Interquartile Range"
+    formula: "Q3 - Q1"
+    scale_divisor: 1.349
+    condition: "finite and strictly positive (scale > 0.0)"
+  stage_3_second_fallback:
+    method: "positive_subset_dispersion"
+    description: "Sample standard deviation of strictly positive finite observations"
+    formula: "std(x[x > 0.0])"
+    min_positive_samples: 10
+    condition: "finite and strictly positive (scale > 0.0)"
+  stage_4_final_fallback:
+    method: "feature_exclusion"
+    action: "exclude_from_active_feature_set"
+    record_machine_readable_reason: true
+    restrictions:
+      arbitrary_epsilon_prohibited: true
+      manufactured_nonzero_scale_prohibited: true
+      silent_zero_substitution_prohibited: true
+
+# 9. Active/Inactive Feature Behavior
+active_inactive_feature_behavior:
+  composite_score_formula: "S(x) = (1 / |A(x)|) * sum_{j in A(x)} z_j(x)"
+  active_feature_set_definition: "A(x) = set of valid active features with positive robust scale"
+  composite_denominator: "actual_active_feature_count"
+  empty_active_set_condition: "|A(x)| == 0"
+  all_inactive_outcome:
+    anomaly_score: null
+    is_anomaly_flagged: null
+    anomaly_status: "DEGRADED_UNSCORABLE"
+    reason_code: "ALL_ANOMALY_FEATURES_INACTIVE"
+    alert_budget_selected: false
+
+# 10. Score Definition and Ranking Direction
+score_definition:
+  raw_score_convention: "s_raw(x) = -score_samples(x)"
+  ranking_direction: "descending"
+  interpretation: "higher score indicates more anomalous observation"
+  feature_z_score_definition: "z_j(x) = abs(x_j - median_j) / robust_scale_j"
+
+# 11. Alert Budget Rate and Denominator
+alert_budget:
+  rate: 0.0100  # 1.00% provisional global alert budget
+  scope: "global"  # Single combined budget across TRANSFER and CASH_OUT
+  denominator_definition: "successfully_scored_eligible_transactions"
+  denominator_formula: "N_S = |S_T| + |S_C|"
+  budget_formula: "K = floor(0.0100 * N_S)"
+  zero_denominator_behavior:
+    rate_value: null
+    status: "NOT_EVALUABLE"
+  zero_k_behavior:
+    selected_alerts: 0
+
+# 12. Tie-Breaking Rule
+tie_breaking:
+  primary_sort:
+    field: "anomaly_score"
+    order: "descending"
+  secondary_tie_break:
+    field: "row_index"
+    order: "ascending"
+  row_index_contract:
+    assignment_point: "source_record_ingestion"
+    assignment_order: "zero_based_integer_ordinal"
+    mutability: "immutable"
+    prohibit_regeneration: true
+    validation: "must_be_unique_and_non_null"
+
+# 13. Unscored and Degraded-State Behavior
+unscored_and_degraded_behavior:
+  counting_rule: "degraded_unscorable_count is a subset of unscored_count"
+  population_identity: "eligible_count = successfully_scored_count + unscored_count"
+  budget_exclusion: true
+  ranking_exclusion: true
+  downstream_preservation: true
+  phase_04_override_permitted: false
+  status_discriminator_inspection_required: true
+
+# 14. Metric Definitions & Monitoring
+metric_definitions:
+  alert_rate_scored: "selected_alert_count / successfully_scored_count"
+  alert_rate_all_eligible: "selected_alert_count / eligible_count"
+  unscored_rate: "unscored_count / eligible_count"
+  degraded_unscorable_rate: "degraded_unscorable_count / eligible_count"
+  zero_denominator_sentinel: "NOT_EVALUABLE"
+  population_stability_index:
+    metric_name: "PSI"
+    diagnostic_only: true
+    interpretation_bands:
+      stable: "< 0.10"
+      monitor: "0.10 - 0.25"
+      investigate: ">= 0.25"
+    tuning_trigger_permitted: false
+
+# 15. Reproducibility & Deterministic Settings
+reproducibility:
+  random_seed: 42
+  deterministic_sort: true
+  single_threaded_execution: true
+  temporal_partitions:
+    train_max_step: 400
+    val_max_step: 550
+    test_max_step: 743
+
+# 16. Software and Package Version References
+software_versions:
+  python: "3.12.10"
+  scikit_learn: "1.7.2"
+  numpy: "2.5.3"
+  pandas: "2.3.3"
+  pyyaml: "6.0.3"
+  scipy: "1.16.2"
